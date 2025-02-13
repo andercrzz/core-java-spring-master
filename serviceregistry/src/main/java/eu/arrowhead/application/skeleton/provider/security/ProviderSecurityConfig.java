@@ -1,5 +1,6 @@
 package eu.arrowhead.application.skeleton.provider.security;
 
+import org.apache.logging.log4j.core.config.Order;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -11,6 +12,7 @@ import ai.aitia.arrowhead.application.library.util.ApplicationCommonConstants;
 
 @Configuration
 @EnableWebSecurity
+@Order(101)
 public class ProviderSecurityConfig extends DefaultSecurityConfig {
 	
 	//=================================================================================================
