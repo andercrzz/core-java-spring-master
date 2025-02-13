@@ -14,22 +14,37 @@
 
 package eu.arrowhead.core.serviceregistry;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.ZonedDateTime;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
+import java.util.Scanner;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.stereotype.Component;
 
+import ai.aitia.arrowhead.application.library.ArrowheadService;
+import ai.aitia.arrowhead.application.library.util.ApplicationCommonConstants;
+import eu.arrowhead.application.skeleton.provider.security.ProviderSecurityConfig;
+import eu.arrowhead.application.skeleton.publisher.event.PresetEventType;
 import eu.arrowhead.common.ApplicationInitListener;
 import eu.arrowhead.common.CommonConstants;
 import eu.arrowhead.common.CoreDefaults;
+import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.core.CoreSystem;
 import eu.arrowhead.common.core.CoreSystemService;
 import eu.arrowhead.common.database.entity.System;
 import eu.arrowhead.common.database.service.CommonDBService;
+import eu.arrowhead.common.dto.shared.EventPublishRequestDTO;
 import eu.arrowhead.common.dto.shared.ServiceRegistryRequestDTO;
 import eu.arrowhead.common.dto.shared.ServiceSecurityType;
 import eu.arrowhead.common.dto.shared.SystemRequestDTO;
@@ -48,6 +63,27 @@ public class ServiceRegistryApplicationInitListener extends ApplicationInitListe
 
     @Autowired
     private ServiceRegistryDBService serviceRegistryDBService;
+
+    @Autowired
+	private ArrowheadService arrowheadService;
+	
+	@Autowired
+	private ProviderSecurityConfig providerSecurityConfig;
+	
+	@Value(ApplicationCommonConstants.$TOKEN_SECURITY_FILTER_ENABLED_WD)
+	private boolean tokenSecurityFilterEnabled;
+	
+	@Value(CommonConstants.$SERVER_SSL_ENABLED_WD)
+	private boolean sslEnabled;
+	
+	@Value(ApplicationCommonConstants.$APPLICATION_SYSTEM_NAME)
+	private String mySystemName;
+	
+	@Value(ApplicationCommonConstants.$APPLICATION_SERVER_ADDRESS_WD)
+	private String mySystemAddress;
+	
+	@Value(ApplicationCommonConstants.$APPLICATION_SERVER_PORT_WD)
+	private int mySystemPort;
 
     //=================================================================================================
     // assistant methods
@@ -98,7 +134,83 @@ public class ServiceRegistryApplicationInitListener extends ApplicationInitListe
         	logger.warn("Problem occurs during calculating system address types: {}", ex.getMessage());
         	logger.debug("Stacktrace", ex);
         }
+
+        logger.debug("customInit finished...");
+
+        // Show menu in console
+		showMenu();
     }
+
+    // Method to show menu and handle user input
+	private void showMenu() {
+        Scanner scanner = new Scanner(java.lang.System.in);
+		while (true) {
+			java.lang.System.out.println("Select an option:");
+			java.lang.System.out.println("1. View assets");
+			java.lang.System.out.println("2. Create new asset");
+			java.lang.System.out.println("3. Exit");
+
+			int choice = scanner.nextInt();
+			scanner.nextLine(); // Consume newline
+
+			switch (choice) {
+				case 1:
+					// Logic to view assets
+					java.lang.System.out.println("Viewing assets...");
+					viewAssets();
+					break;
+				case 2:
+					// Logic to create new asset
+					java.lang.System.out.println("Enter asset name:\n");
+					String name = scanner.nextLine();
+					java.lang.System.out.println("Enter asset endpoint:\n");
+					String endpoint = scanner.nextLine();
+					publishMyEvent(name, endpoint);
+					break;
+                case 3:
+					java.lang.System.out.println("Starting Event Handler configuration");
+					
+					return;
+				case 4:
+					java.lang.System.out.println("Exiting...");
+					scanner.close();
+					customDestroy();
+					return;
+				default:
+                    java.lang.System.out.println("Invalid choice. Please try again.");
+			}
+		}
+	}
+
+	// Method to view assets
+	private void viewAssets() {
+		HttpClient client = HttpClient.newHttpClient();
+		HttpRequest request = HttpRequest.newBuilder()
+			.uri(URI.create("http://localhost:8082/registry/api/v1/registry"))
+			.GET()
+			.build();
+
+		client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+			.thenApply(HttpResponse::body)
+			.thenAccept(this::parseAndDisplayAssets)
+			.join();
+	}
+
+	// Method to parse and display assets
+	private void parseAndDisplayAssets(String responseBody) {
+		JSONArray assets = new JSONArray(responseBody);
+		for (int i = 0; i < assets.length(); i++) {
+			JSONObject asset = assets.getJSONObject(i);
+			String idShort = asset.getString("idShort");
+			String id = asset.getJSONObject("identification").getString("id");
+			String endpoint = asset.getJSONArray("endpoints").getJSONObject(0).getString("address");
+
+			java.lang.System.out.println("Asset ID Short: " + idShort);
+			java.lang.System.out.println("Asset ID: " + id);
+			java.lang.System.out.println("Endpoint: " + endpoint);
+			java.lang.System.out.println("-------------------------");
+		}
+	}
 
     //-------------------------------------------------------------------------------------------------
     private void removeServiceRegistryEntries(final System system) {
@@ -142,4 +254,29 @@ public class ServiceRegistryApplicationInitListener extends ApplicationInitListe
             logger.info("{}.{} own cloud is registered in {} mode.", name, operator, getModeString());
         }
     }
+    //-------------------------------------------------------------------------------------------------
+	private void publishMyEvent(String name, String endpoint) {
+		final String eventType = PresetEventType.MY_CUSTOM_EVENT.getEventTypeName();
+		
+		final SystemRequestDTO source = new SystemRequestDTO();
+		source.setSystemName(mySystemName);
+		source.setAddress(mySystemAddress);
+		source.setPort(mySystemPort);
+		if (sslEnabled) {
+			source.setAuthenticationInfo(Base64.getEncoder().encodeToString( arrowheadService.getMyPublicKey().getEncoded()));
+		}
+
+		final Map<String,String> metadata = null;
+		final String payload = name + "/" + endpoint;
+		final String timeStamp = Utilities.convertZonedDateTimeToUTCString( ZonedDateTime.now() );
+		
+		final EventPublishRequestDTO publishRequestDTO = new EventPublishRequestDTO(
+				eventType, 
+				source, 
+				metadata, 
+				payload, 
+				timeStamp);
+		
+		arrowheadService.publishToEventHandler(publishRequestDTO);
+	}
 }
