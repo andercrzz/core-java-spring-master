@@ -1,0 +1,10 @@
+Package: arrowhead-certificate-authority
+Version: [[version]]
+Section: contrib/java
+Priority: optional
+Architecture: all
+Maintainer: Svetlin Tanyi <szvetlin@aitia.ai>
+Homepage: http://www.arrowhead.eu
+Description: Arrowhead Certificate Authority
+Distribution: development
+Depends: java-runtime-headless, openssl, virtual-mysql-server, arrowhead-core-common
