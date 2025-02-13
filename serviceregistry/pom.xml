@@ -17,6 +17,11 @@
 	      	<artifactId>arrowhead-core-common</artifactId>
 	      	<version>${revision}</version>
 	    </dependency>
+		<dependency>
+			<groupId>eu.arrowhead</groupId>
+			<artifactId>demo-car-with-events-common</artifactId>
+			<version>4.4.0.2</version>
+		</dependency>
   	</dependencies>
  
 	<build>

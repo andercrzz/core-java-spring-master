@@ -26,7 +26,7 @@ import eu.arrowhead.common.database.repository.RefreshableRepositoryImpl;
 import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
 @SpringBootApplication
-@ComponentScan(CommonConstants.BASE_PACKAGE)
+@ComponentScan({CommonConstants.BASE_PACKAGE, SystemProviderWithPublishingConstants.BASE_PACKAGE})
 @EntityScan(CoreCommonConstants.DATABASE_ENTITY_PACKAGE)
 @EnableJpaRepositories(basePackages = CoreCommonConstants.DATABASE_REPOSITORY_PACKAGE, repositoryBaseClass = RefreshableRepositoryImpl.class)
 @EnableSwagger2
