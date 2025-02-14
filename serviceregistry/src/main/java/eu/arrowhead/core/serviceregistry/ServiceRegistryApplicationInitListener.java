@@ -152,7 +152,8 @@ public class ServiceRegistryApplicationInitListener extends ApplicationInitListe
 			java.lang.System.out.println("Select an option:");
 			java.lang.System.out.println("1. View assets");
 			java.lang.System.out.println("2. Create new asset");
-			java.lang.System.out.println("3. Exit");
+			java.lang.System.out.println("3. Configure event handler");
+			java.lang.System.out.println("4. Exit");
 
 			int choice = scanner.nextInt();
 			scanner.nextLine(); // Consume newline
