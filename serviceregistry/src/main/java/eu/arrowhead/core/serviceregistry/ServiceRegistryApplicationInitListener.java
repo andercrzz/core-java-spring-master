@@ -32,6 +32,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 
+import javax.annotation.PostConstruct;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -145,8 +147,15 @@ public class ServiceRegistryApplicationInitListener extends ApplicationInitListe
         }
     }
 
-    // Method to show menu and handle user input
-	private void showMenu() throws CertificateException {
+	@PostConstruct
+    private void postCustomInit() {
+        // Aquí la lógica a ejecutar después de customInit
+        logger.info("Post customInit logic executed.");
+        showMenu();
+    }
+    
+	// Method to show menu and handle user input
+	private void showMenu() {
         Scanner scanner = new Scanner(java.lang.System.in);
 		while (true) {
 			java.lang.System.out.println("Select an option:");
@@ -174,31 +183,8 @@ public class ServiceRegistryApplicationInitListener extends ApplicationInitListe
 					break;
                 case 3:
 					java.lang.System.out.println("Starting Event Handler configuration");
-					//Checking the availability of necessary core systems
-					checkCoreSystemReachability(CoreSystem.SERVICEREGISTRY);
-					if (sslEnabled && tokenSecurityFilterEnabled) {
-						checkCoreSystemReachability(CoreSystem.AUTHORIZATION);			
-
-						//Initialize Arrowhead Context
-						arrowheadService.updateCoreServiceURIs(CoreSystem.AUTHORIZATION);
-						
-						setTokenSecurityFilter();
-					} else {
-						logger.info("TokenSecurityFilter in not active");
-					}		
-					
-					//Register services into ServiceRegistry
-					final ServiceRegistryRequestDTO createCarServiceRequest = createServiceRegistryRequest(SystemProviderWithPublishingConstants.CREATE_SYSTEM_SERVICE_DEFINITION, SystemProviderWithPublishingConstants.SYSTEM_URI, HttpMethod.POST);		
-					arrowheadService.forceRegisterServiceToServiceRegistry(createCarServiceRequest);
-					
-					final ServiceRegistryRequestDTO getCarServiceRequest = createServiceRegistryRequest(SystemProviderWithPublishingConstants.GET_SYSTEM_SERVICE_DEFINITION,  SystemProviderWithPublishingConstants.SYSTEM_URI, HttpMethod.GET);
-					getCarServiceRequest.getMetadata().put(SystemProviderWithPublishingConstants.REQUEST_PARAM_KEY_NAME, SystemProviderWithPublishingConstants.REQUEST_PARAM_NAME);
-					getCarServiceRequest.getMetadata().put(SystemProviderWithPublishingConstants.REQUEST_PARAM_KEY_ENDPOINT, SystemProviderWithPublishingConstants.REQUEST_PARAM_ENDPOINT);
-					arrowheadService.forceRegisterServiceToServiceRegistry(getCarServiceRequest);
-					
-					if (arrowheadService.echoCoreSystem(CoreSystem.EVENTHANDLER)) {
-						arrowheadService.updateCoreServiceURIs(CoreSystem.EVENTHANDLER);	
-					}
+					// Logic to configure event handler
+					configureEventHandler();
 					return;
 				case 4:
 					java.lang.System.out.println("Exiting...");
@@ -238,6 +224,40 @@ public class ServiceRegistryApplicationInitListener extends ApplicationInitListe
 			java.lang.System.out.println("Asset ID: " + id);
 			java.lang.System.out.println("Endpoint: " + endpoint);
 			java.lang.System.out.println("-------------------------");
+		}
+	}
+
+	private void configureEventHandler() {
+
+		//Checking the availability of necessary core systems
+		checkCoreSystemReachability(CoreSystem.SERVICEREGISTRY);
+		if (sslEnabled && tokenSecurityFilterEnabled) {
+			checkCoreSystemReachability(CoreSystem.AUTHORIZATION);			
+
+			//Initialize Arrowhead Context
+			arrowheadService.updateCoreServiceURIs(CoreSystem.AUTHORIZATION);
+			
+			try {
+				setTokenSecurityFilter();
+			} catch (CertificateException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		} else {
+			logger.info("TokenSecurityFilter in not active");
+		}		
+		
+		//Register services into ServiceRegistry
+		final ServiceRegistryRequestDTO createCarServiceRequest = createServiceRegistryRequest(SystemProviderWithPublishingConstants.CREATE_SYSTEM_SERVICE_DEFINITION, SystemProviderWithPublishingConstants.SYSTEM_URI, HttpMethod.POST);		
+		arrowheadService.forceRegisterServiceToServiceRegistry(createCarServiceRequest);
+		
+		final ServiceRegistryRequestDTO getCarServiceRequest = createServiceRegistryRequest(SystemProviderWithPublishingConstants.GET_SYSTEM_SERVICE_DEFINITION,  SystemProviderWithPublishingConstants.SYSTEM_URI, HttpMethod.GET);
+		getCarServiceRequest.getMetadata().put(SystemProviderWithPublishingConstants.REQUEST_PARAM_KEY_NAME, SystemProviderWithPublishingConstants.REQUEST_PARAM_NAME);
+		getCarServiceRequest.getMetadata().put(SystemProviderWithPublishingConstants.REQUEST_PARAM_KEY_ENDPOINT, SystemProviderWithPublishingConstants.REQUEST_PARAM_ENDPOINT);
+		arrowheadService.forceRegisterServiceToServiceRegistry(getCarServiceRequest);
+		
+		if (arrowheadService.echoCoreSystem(CoreSystem.EVENTHANDLER)) {
+			arrowheadService.updateCoreServiceURIs(CoreSystem.EVENTHANDLER);	
 		}
 	}
 
