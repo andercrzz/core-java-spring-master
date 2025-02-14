@@ -143,16 +143,6 @@ public class ServiceRegistryApplicationInitListener extends ApplicationInitListe
         	logger.warn("Problem occurs during calculating system address types: {}", ex.getMessage());
         	logger.debug("Stacktrace", ex);
         }
-
-        logger.debug("customInit finished...");
-
-        // Show menu in console
-		try {
-			showMenu();
-		} catch (CertificateException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
     }
 
     // Method to show menu and handle user input
