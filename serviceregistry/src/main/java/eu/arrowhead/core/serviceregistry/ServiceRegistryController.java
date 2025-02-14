@@ -355,8 +355,12 @@ public class ServiceRegistryController {
 		 
 		SystemResponseDTO response = callCreateSystem(null, request, CommonConstants.SERVICEREGISTRY_URI + SYSTEMS_URI);
 
-		serviceRegistryApplicationInitListener.configureEventHandler();
-		serviceRegistryApplicationInitListener.publishMyEvent(request.getSystemName().toLowerCase().trim(), request.getAddress().toLowerCase().trim());
+		if(request.getSystemName().equalsIgnoreCase("eventhandler")) {
+			serviceRegistryApplicationInitListener.configureEventHandler();
+		}
+		else{
+			serviceRegistryApplicationInitListener.publishMyEvent(request.getSystemName().toLowerCase().trim(), request.getAddress().toLowerCase().trim());
+		}
 
 		return response;
 	}
