@@ -14,12 +14,20 @@
 
 package eu.arrowhead.core.serviceregistry;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.cert.CertificateException;
 import java.time.ZonedDateTime;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
@@ -51,6 +59,7 @@ import eu.arrowhead.common.dto.shared.SystemRequestDTO;
 import eu.arrowhead.common.exception.ArrowheadException;
 import eu.arrowhead.common.exception.DataNotFoundException;
 import eu.arrowhead.core.serviceregistry.database.service.ServiceRegistryDBService;
+import io.swagger.models.HttpMethod;
 
 @Component
 public class ServiceRegistryApplicationInitListener extends ApplicationInitListener {
@@ -138,11 +147,16 @@ public class ServiceRegistryApplicationInitListener extends ApplicationInitListe
         logger.debug("customInit finished...");
 
         // Show menu in console
-		showMenu();
+		try {
+			showMenu();
+		} catch (CertificateException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
     }
 
     // Method to show menu and handle user input
-	private void showMenu() {
+	private void showMenu() throws CertificateException {
         Scanner scanner = new Scanner(java.lang.System.in);
 		while (true) {
 			java.lang.System.out.println("Select an option:");
@@ -169,7 +183,31 @@ public class ServiceRegistryApplicationInitListener extends ApplicationInitListe
 					break;
                 case 3:
 					java.lang.System.out.println("Starting Event Handler configuration");
+					//Checking the availability of necessary core systems
+					checkCoreSystemReachability(CoreSystem.SERVICEREGISTRY);
+					if (sslEnabled && tokenSecurityFilterEnabled) {
+						checkCoreSystemReachability(CoreSystem.AUTHORIZATION);			
+
+						//Initialize Arrowhead Context
+						arrowheadService.updateCoreServiceURIs(CoreSystem.AUTHORIZATION);
+						
+						setTokenSecurityFilter();
+					} else {
+						logger.info("TokenSecurityFilter in not active");
+					}		
 					
+					//Register services into ServiceRegistry
+					final ServiceRegistryRequestDTO createCarServiceRequest = createServiceRegistryRequest(SystemProviderWithPublishingConstants.CREATE_SYSTEM_SERVICE_DEFINITION, SystemProviderWithPublishingConstants.SYSTEM_URI, HttpMethod.POST);		
+					arrowheadService.forceRegisterServiceToServiceRegistry(createCarServiceRequest);
+					
+					final ServiceRegistryRequestDTO getCarServiceRequest = createServiceRegistryRequest(SystemProviderWithPublishingConstants.GET_SYSTEM_SERVICE_DEFINITION,  SystemProviderWithPublishingConstants.SYSTEM_URI, HttpMethod.GET);
+					getCarServiceRequest.getMetadata().put(SystemProviderWithPublishingConstants.REQUEST_PARAM_KEY_NAME, SystemProviderWithPublishingConstants.REQUEST_PARAM_NAME);
+					getCarServiceRequest.getMetadata().put(SystemProviderWithPublishingConstants.REQUEST_PARAM_KEY_ENDPOINT, SystemProviderWithPublishingConstants.REQUEST_PARAM_ENDPOINT);
+					arrowheadService.forceRegisterServiceToServiceRegistry(getCarServiceRequest);
+					
+					if (arrowheadService.echoCoreSystem(CoreSystem.EVENTHANDLER)) {
+						arrowheadService.updateCoreServiceURIs(CoreSystem.EVENTHANDLER);	
+					}
 					return;
 				case 4:
 					java.lang.System.out.println("Exiting...");
@@ -254,7 +292,10 @@ public class ServiceRegistryApplicationInitListener extends ApplicationInitListe
             logger.info("{}.{} own cloud is registered in {} mode.", name, operator, getModeString());
         }
     }
-    //-------------------------------------------------------------------------------------------------
+    //=================================================================================================
+	// assistant methods
+
+	//-------------------------------------------------------------------------------------------------
 	private void publishMyEvent(String name, String endpoint) {
 		final String eventType = PresetEventType.MY_CUSTOM_EVENT.getEventTypeName();
 		
@@ -278,5 +319,62 @@ public class ServiceRegistryApplicationInitListener extends ApplicationInitListe
 				timeStamp);
 		
 		arrowheadService.publishToEventHandler(publishRequestDTO);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private void setTokenSecurityFilter() throws CertificateException {
+		final PublicKey authorizationPublicKey = arrowheadService.queryAuthorizationPublicKey();
+		if (authorizationPublicKey == null) {
+			throw new ArrowheadException("Authorization public key is null");
+		}
+		
+		KeyStore keystore;
+		try {
+			keystore = KeyStore.getInstance(sslProperties.getKeyStoreType());
+			keystore.load(sslProperties.getKeyStore().getInputStream(), sslProperties.getKeyStorePassword().toCharArray());
+		} catch (final KeyStoreException | NoSuchAlgorithmException | CertificateException | IOException ex) {
+			throw new ArrowheadException(ex.getMessage());
+		}			
+		final PrivateKey providerPrivateKey = Utilities.getPrivateKey(keystore, sslProperties.getKeyPassword());
+		
+		providerSecurityConfig.getTokenSecurityFilter().setAuthorizationPublicKey(authorizationPublicKey);
+		providerSecurityConfig.getTokenSecurityFilter().setMyPrivateKey(providerPrivateKey);
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	private ServiceRegistryRequestDTO createServiceRegistryRequest(final String serviceDefinition, final String serviceUri, final HttpMethod httpMethod) {
+		final ServiceRegistryRequestDTO serviceRegistryRequest = new ServiceRegistryRequestDTO();
+		serviceRegistryRequest.setServiceDefinition(serviceDefinition);
+		final SystemRequestDTO systemRequest = new SystemRequestDTO();
+		systemRequest.setSystemName(mySystemName);
+		systemRequest.setAddress(mySystemAddress);
+		systemRequest.setPort(mySystemPort);		
+
+		if (sslEnabled && tokenSecurityFilterEnabled) {
+			systemRequest.setAuthenticationInfo(Base64.getEncoder().encodeToString(arrowheadService.getMyPublicKey().getEncoded()));
+			serviceRegistryRequest.setSecure(ServiceSecurityType.TOKEN.name());
+			serviceRegistryRequest.setInterfaces(List.of(SystemProviderWithPublishingConstants.INTERFACE_SECURE));
+		} else if (sslEnabled) {
+			systemRequest.setAuthenticationInfo(Base64.getEncoder().encodeToString(arrowheadService.getMyPublicKey().getEncoded()));
+			serviceRegistryRequest.setSecure(ServiceSecurityType.CERTIFICATE.name());
+			serviceRegistryRequest.setInterfaces(List.of(SystemProviderWithPublishingConstants.INTERFACE_SECURE));
+		} else {
+			serviceRegistryRequest.setSecure(ServiceSecurityType.NOT_SECURE.name());
+			serviceRegistryRequest.setInterfaces(List.of(SystemProviderWithPublishingConstants.INTERFACE_INSECURE));
+		}
+		serviceRegistryRequest.setProviderSystem(systemRequest);
+		serviceRegistryRequest.setServiceUri(serviceUri);
+		serviceRegistryRequest.setMetadata(new HashMap<>());
+		serviceRegistryRequest.getMetadata().put(SystemProviderWithPublishingConstants.HTTP_METHOD, httpMethod.name());
+		return serviceRegistryRequest;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	protected void checkCoreSystemReachability(final CoreSystem coreSystem) {
+		if (arrowheadService.echoCoreSystem(coreSystem)) {
+			logger.info("'{}' core system is reachable.", coreSystem.name());
+		} else {
+			logger.info("'{}' core system is NOT reachable.", coreSystem.name());
+		}
 	}
 }
