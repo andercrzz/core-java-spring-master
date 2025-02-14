@@ -12,7 +12,7 @@ import ai.aitia.arrowhead.application.library.util.ApplicationCommonConstants;
 
 @Configuration
 @EnableWebSecurity
-@Order(101)
+@Order(102)
 public class ProviderSecurityConfig extends DefaultSecurityConfig {
 	
 	//=================================================================================================

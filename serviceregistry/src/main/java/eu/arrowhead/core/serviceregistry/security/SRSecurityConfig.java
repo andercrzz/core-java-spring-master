@@ -22,7 +22,7 @@ import eu.arrowhead.common.security.DefaultSecurityConfig;
 
 @Configuration
 @EnableWebSecurity
-@Order(102)
+@Order(101)
 public class SRSecurityConfig extends DefaultSecurityConfig {
 
 }
