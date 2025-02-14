@@ -32,8 +32,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 
-import javax.annotation.PostConstruct;
-
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -146,13 +144,6 @@ public class ServiceRegistryApplicationInitListener extends ApplicationInitListe
         	logger.debug("Stacktrace", ex);
         }
     }
-
-	@PostConstruct
-    private void postCustomInit() {
-        // Aquí la lógica a ejecutar después de customInit
-        logger.info("Post customInit logic executed.");
-        showMenu();
-    }
     
 	// Method to show menu and handle user input
 	private void showMenu() {
@@ -227,7 +218,7 @@ public class ServiceRegistryApplicationInitListener extends ApplicationInitListe
 		}
 	}
 
-	private void configureEventHandler() {
+	public void configureEventHandler() {
 
 		//Checking the availability of necessary core systems
 		checkCoreSystemReachability(CoreSystem.SERVICEREGISTRY);
@@ -307,7 +298,7 @@ public class ServiceRegistryApplicationInitListener extends ApplicationInitListe
 	// assistant methods
 
 	//-------------------------------------------------------------------------------------------------
-	private void publishMyEvent(String name, String endpoint) {
+	public void publishMyEvent(String name, String endpoint) {
 		final String eventType = PresetEventType.MY_CUSTOM_EVENT.getEventTypeName();
 		
 		final SystemRequestDTO source = new SystemRequestDTO();
