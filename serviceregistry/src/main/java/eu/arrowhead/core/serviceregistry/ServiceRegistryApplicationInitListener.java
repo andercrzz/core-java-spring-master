@@ -231,6 +231,7 @@ public class ServiceRegistryApplicationInitListener extends ApplicationInitListe
 			setTokenSecurityFilter();
 		} else {
 			logger.info("TokenSecurityFilter in not active");
+			throw new ArrowheadException("TokenSecurityFilter in not active");
 		}		
 		
 		//Register services into ServiceRegistry
@@ -369,9 +370,11 @@ public class ServiceRegistryApplicationInitListener extends ApplicationInitListe
 	//-------------------------------------------------------------------------------------------------
 	protected void checkCoreSystemReachability(final CoreSystem coreSystem) {
 		if (arrowheadService.echoCoreSystem(coreSystem)) {
-			logger.info("'{}' core system is reachable.", coreSystem.name());
+			logger.debug("'{}' core system is reachable.", coreSystem.name());
 		} else {
-			logger.info("'{}' core system is NOT reachable.", coreSystem.name());
+			logger.debug("'{}' core system is NOT reachable.", coreSystem.name());
+			throw new ArrowheadException("Core system is NOT reachable.");
+			
 		}
 	}
 }

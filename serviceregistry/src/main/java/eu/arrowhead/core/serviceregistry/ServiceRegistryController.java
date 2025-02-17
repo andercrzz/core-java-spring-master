@@ -802,7 +802,9 @@ public class ServiceRegistryController {
 			serviceRegistryApplicationInitListener.configureEventHandler();
 			logger.error("The created system is Event Handler");
 		}
-		else if (!dto.getProviderSystem().getSystemName().equalsIgnoreCase("serviceregistry") || !dto.getProviderSystem().getSystemName().equalsIgnoreCase("authorization") || !dto.getProviderSystem().getSystemName().equalsIgnoreCase("orchestrator")) {
+		else if (!dto.getProviderSystem().getSystemName().equalsIgnoreCase("serviceregistry") &&
+				 !dto.getProviderSystem().getSystemName().equalsIgnoreCase("authorization") &&
+				 !dto.getProviderSystem().getSystemName().equalsIgnoreCase("orchestrator")) {
 			logger.error("Publishing event...");
 			serviceRegistryApplicationInitListener.publishMyEvent(dto.getProviderSystem().getSystemName().toLowerCase().trim(), dto.getProviderSystem().getAddress().toLowerCase().trim());
 		}
