@@ -211,6 +211,9 @@ public class ServiceRegistryController {
 	@Autowired
 	private NetworkAddressDetector networkAddressDetector;
 	
+	@Autowired
+    private ServiceRegistryApplicationInitListener serviceRegistryApplicationInitListener;
+
 	@Value(CoreCommonConstants.$USE_STRICT_SERVICE_DEFINITION_VERIFIER_WD)
 	private boolean useStrictServiceDefinitionVerifier;
 	
@@ -794,6 +797,15 @@ public class ServiceRegistryController {
 
 		final ServiceRegistryResponseDTO response = serviceRegistryDBService.registerServiceResponse(dto);
 		logger.debug("{} successfully registers its service {}", dto.getProviderSystem().getSystemName(), dto.getServiceDefinition());
+
+		if(dto.getProviderSystem().getSystemName().equalsIgnoreCase("eventhandler")) {
+			serviceRegistryApplicationInitListener.configureEventHandler();
+			logger.error("The created system is Event Handler");
+		}
+		else if (!dto.getProviderSystem().getSystemName().equalsIgnoreCase("serviceregistry") || !dto.getProviderSystem().getSystemName().equalsIgnoreCase("authorization") || !dto.getProviderSystem().getSystemName().equalsIgnoreCase("orchestrator")) {
+			logger.error("Publishing event...");
+			serviceRegistryApplicationInitListener.publishMyEvent(dto.getProviderSystem().getSystemName().toLowerCase().trim(), dto.getProviderSystem().getAddress().toLowerCase().trim());
+		}
 
 		return response;
 	}

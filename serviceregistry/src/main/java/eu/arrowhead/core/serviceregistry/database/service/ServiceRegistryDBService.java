@@ -115,9 +115,6 @@ public class ServiceRegistryDBService {
 	@Autowired
 	private SSLProperties sslProperties;
 
-	@Autowired
-    private ServiceRegistryApplicationInitListener serviceRegistryApplicationInitListener;
-
 	@Value(CoreCommonConstants.$SERVICEREGISTRY_PING_TIMEOUT_WD)
 	private int pingTimeout;
 
@@ -678,15 +675,6 @@ public class ServiceRegistryDBService {
 			final ServiceRegistry srEntry = createServiceRegistry(serviceDefinition, provider, validatedServiceUri, endOfValidity, validatedSecurityType, metadataStr, version, request.getInterfaces());
 
 			ServiceRegistryResponseDTO response = DTOConverter.convertServiceRegistryToServiceRegistryResponseDTO(srEntry);
-
-			if(request.getProviderSystem().getSystemName().equalsIgnoreCase("eventhandler")) {
-				serviceRegistryApplicationInitListener.configureEventHandler();
-				logger.error("The created system is Event Handler");
-			}
-			else if (!request.getProviderSystem().getSystemName().equalsIgnoreCase("serviceregistry")) {
-				logger.error("Publishing event...");
-				serviceRegistryApplicationInitListener.publishMyEvent(request.getProviderSystem().getSystemName().toLowerCase().trim(), request.getProviderSystem().getAddress().toLowerCase().trim());
-			}
 
 			return response;
 		} catch (final DateTimeParseException ex) {
