@@ -1223,7 +1223,7 @@ public class ServiceRegistryController {
 			response = serviceRegistryDBService.createSystemResponse("pollas", address, port, authenticationInfo, metadata);
 		}
 		else {
-			response = serviceRegistryDBService.createSystemResponse(systemName, address, port, authenticationInfo, metadata);
+			response = serviceRegistryDBService.createSystemResponse("pollas", address, port, authenticationInfo, metadata);
 		}
 		return response;
 	}
