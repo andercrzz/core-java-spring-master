@@ -1218,8 +1218,14 @@ public class ServiceRegistryController {
 		final int port = dto.getPort();
 		final String authenticationInfo = dto.getAuthenticationInfo();
 		final Map<String,String> metadata = dto.getMetadata();
-
-		return serviceRegistryDBService.createSystemResponse(systemName, address, port, authenticationInfo, metadata);
+		SystemResponseDTO response;
+		if(systemName.equals("eventhandler")) {
+			response = serviceRegistryDBService.createSystemResponse("pollas", address, port, authenticationInfo, metadata);
+		}
+		else {
+			response = serviceRegistryDBService.createSystemResponse(systemName, address, port, authenticationInfo, metadata);
+		}
+		return response;
 	}
 
 	//-------------------------------------------------------------------------------------------------
