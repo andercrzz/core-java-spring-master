@@ -352,15 +352,15 @@ public class ServiceRegistryController {
 	@PostMapping(path = SYSTEMS_URI, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	@ResponseStatus(org.springframework.http.HttpStatus.CREATED)
 	@ResponseBody public SystemResponseDTO addSystem(@RequestBody final SystemRequestDTO request) {
-		logger.info("'{}' system is being creating.", request.getSystemName());
+		logger.error("'{}' system is being creating.", request.getSystemName());
 		SystemResponseDTO response = callCreateSystem(null, request, CommonConstants.SERVICEREGISTRY_URI + SYSTEMS_URI);
 
 		if(request.getSystemName().equalsIgnoreCase("eventhandler")) {
 			serviceRegistryApplicationInitListener.configureEventHandler();
-			logger.info("The created system is Event Handler");
+			logger.error("The created system is Event Handler");
 		}
 		else{
-			logger.info("Publishing event...");
+			logger.error("Publishing event...");
 			serviceRegistryApplicationInitListener.publishMyEvent(request.getSystemName().toLowerCase().trim(), request.getAddress().toLowerCase().trim());
 		}
 

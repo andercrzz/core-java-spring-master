@@ -228,12 +228,7 @@ public class ServiceRegistryApplicationInitListener extends ApplicationInitListe
 			//Initialize Arrowhead Context
 			arrowheadService.updateCoreServiceURIs(CoreSystem.AUTHORIZATION);
 			
-			try {
-				setTokenSecurityFilter();
-			} catch (CertificateException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+			setTokenSecurityFilter();
 		} else {
 			logger.info("TokenSecurityFilter in not active");
 		}		
@@ -324,7 +319,7 @@ public class ServiceRegistryApplicationInitListener extends ApplicationInitListe
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	private void setTokenSecurityFilter() throws CertificateException {
+	private void setTokenSecurityFilter() {
 		final PublicKey authorizationPublicKey = arrowheadService.queryAuthorizationPublicKey();
 		if (authorizationPublicKey == null) {
 			throw new ArrowheadException("Authorization public key is null");
