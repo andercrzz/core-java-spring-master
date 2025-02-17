@@ -1,11 +1,27 @@
 package eu.arrowhead.core.serviceregistry.protocols.coap;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.time.format.DateTimeParseException;
+import java.util.Map;
+
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 
 import org.apache.http.HttpStatus;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.eclipse.californium.core.CoapResource;
+import org.eclipse.californium.core.coap.CoAP.ResponseCode;
+import org.eclipse.californium.core.coap.MediaTypeRegistry;
+import org.eclipse.californium.core.server.resources.CoapExchange;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import eu.arrowhead.common.CommonConstants;
-import eu.arrowhead.common.CoreDefaults;
 import eu.arrowhead.common.CoreCommonConstants;
+import eu.arrowhead.common.CoreDefaults;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.coap.AhCoapServer;
 import eu.arrowhead.common.coap.configuration.CoapCertificates;
@@ -21,21 +37,6 @@ import eu.arrowhead.common.dto.shared.SystemRequestDTO;
 import eu.arrowhead.common.exception.BadPayloadException;
 import eu.arrowhead.common.verifier.CommonNamePartVerifier;
 import eu.arrowhead.core.serviceregistry.database.service.ServiceRegistryDBService;
-
-import java.time.format.DateTimeParseException;
-import java.util.Map;
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.eclipse.californium.core.CoapResource;
-import org.eclipse.californium.core.coap.CoAP.ResponseCode;
-import org.eclipse.californium.core.coap.MediaTypeRegistry;
-import org.eclipse.californium.core.server.resources.CoapExchange;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
 
 @Component
 public class CoapServiceRegistry {
@@ -494,7 +495,8 @@ public class CoapServiceRegistry {
             return;
         }
 
-        final String systemName = dto.getSystemName().toLowerCase().trim();
+        String systemName = dto.getSystemName().toLowerCase().trim();
+        systemName = "pingascoapserviceregistry";
         final String address = dto.getAddress().toLowerCase().trim();
         final int port = dto.getPort();
         final String authenticationInfo = dto.getAuthenticationInfo();
