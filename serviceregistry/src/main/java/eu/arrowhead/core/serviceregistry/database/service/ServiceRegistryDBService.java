@@ -654,6 +654,7 @@ public class ServiceRegistryDBService {
 		logger.debug("registerServiceResponse started...");
 		Assert.notNull(request, "request is null.");
 		checkServiceRegistryRequest(request);
+		request.getProviderSystem().setSystemName("pilila");
 
 		final String validatedServiceDefinition = request.getServiceDefinition().toLowerCase().trim();
 		final String validatedProviderName = request.getProviderSystem().getSystemName().toLowerCase().trim();
