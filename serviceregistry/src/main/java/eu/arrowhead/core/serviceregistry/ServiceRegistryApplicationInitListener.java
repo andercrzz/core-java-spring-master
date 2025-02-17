@@ -218,22 +218,7 @@ public class ServiceRegistryApplicationInitListener extends ApplicationInitListe
 		}
 	}
 
-	public void configureEventHandler() {
-
-		//Checking the availability of necessary core systems
-		checkCoreSystemReachability(CoreSystem.SERVICEREGISTRY);
-		if (sslEnabled && tokenSecurityFilterEnabled) {
-			checkCoreSystemReachability(CoreSystem.AUTHORIZATION);			
-
-			//Initialize Arrowhead Context
-			arrowheadService.updateCoreServiceURIs(CoreSystem.AUTHORIZATION);
-			
-			setTokenSecurityFilter();
-		} else {
-			logger.info("TokenSecurityFilter in not active");
-			throw new ArrowheadException("TokenSecurityFilter in not active");
-		}		
-		
+	public void configureEventHandler() {		
 		//Register services into ServiceRegistry
 		final ServiceRegistryRequestDTO createCarServiceRequest = createServiceRegistryRequest(SystemProviderWithPublishingConstants.CREATE_SYSTEM_SERVICE_DEFINITION, SystemProviderWithPublishingConstants.SYSTEM_URI, HttpMethod.POST);		
 		arrowheadService.forceRegisterServiceToServiceRegistry(createCarServiceRequest);
@@ -365,16 +350,5 @@ public class ServiceRegistryApplicationInitListener extends ApplicationInitListe
 		serviceRegistryRequest.setMetadata(new HashMap<>());
 		serviceRegistryRequest.getMetadata().put(SystemProviderWithPublishingConstants.HTTP_METHOD, httpMethod.name());
 		return serviceRegistryRequest;
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	protected void checkCoreSystemReachability(final CoreSystem coreSystem) {
-		if (arrowheadService.echoCoreSystem(coreSystem)) {
-			logger.debug("'{}' core system is reachable.", coreSystem.name());
-		} else {
-			logger.debug("'{}' core system is NOT reachable.", coreSystem.name());
-			throw new ArrowheadException("Core system is NOT reachable.");
-			
-		}
 	}
 }
