@@ -210,9 +210,6 @@ public class ServiceRegistryController {
 	
 	@Autowired
 	private NetworkAddressDetector networkAddressDetector;
-
-	@Autowired
-    private ServiceRegistryApplicationInitListener serviceRegistryApplicationInitListener;
 	
 	@Value(CoreCommonConstants.$USE_STRICT_SERVICE_DEFINITION_VERIFIER_WD)
 	private boolean useStrictServiceDefinitionVerifier;
@@ -352,18 +349,8 @@ public class ServiceRegistryController {
 	@PostMapping(path = SYSTEMS_URI, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	@ResponseStatus(org.springframework.http.HttpStatus.CREATED)
 	@ResponseBody public SystemResponseDTO addSystem(@RequestBody final SystemRequestDTO request) {
-		request.setSystemName("pingas");
 		logger.error("'{}' system is being creating.", request.getSystemName());
 		SystemResponseDTO response = callCreateSystem(null, request, CommonConstants.SERVICEREGISTRY_URI + SYSTEMS_URI);
-
-		if(request.getSystemName().equalsIgnoreCase("eventhandler")) {
-			serviceRegistryApplicationInitListener.configureEventHandler();
-			logger.error("The created system is Event Handler");
-		}
-		else{
-			logger.error("Publishing event...");
-			serviceRegistryApplicationInitListener.publishMyEvent(request.getSystemName().toLowerCase().trim(), request.getAddress().toLowerCase().trim());
-		}
 
 		return response;
 	}

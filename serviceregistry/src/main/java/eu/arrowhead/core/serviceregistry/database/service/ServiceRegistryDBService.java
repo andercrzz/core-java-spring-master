@@ -74,6 +74,7 @@ import eu.arrowhead.common.processor.SpecialNetworkAddressTypeDetector;
 import eu.arrowhead.common.verifier.CommonNamePartVerifier;
 import eu.arrowhead.common.verifier.NetworkAddressVerifier;
 import eu.arrowhead.common.verifier.ServiceInterfaceNameVerifier;
+import eu.arrowhead.core.serviceregistry.ServiceRegistryApplicationInitListener;
 
 @Service
 public class ServiceRegistryDBService {
@@ -113,6 +114,9 @@ public class ServiceRegistryDBService {
 	
 	@Autowired
 	private SSLProperties sslProperties;
+
+	@Autowired
+    private ServiceRegistryApplicationInitListener serviceRegistryApplicationInitListener;
 
 	@Value(CoreCommonConstants.$SERVICEREGISTRY_PING_TIMEOUT_WD)
 	private int pingTimeout;
@@ -654,7 +658,7 @@ public class ServiceRegistryDBService {
 		logger.debug("registerServiceResponse started...");
 		Assert.notNull(request, "request is null.");
 		checkServiceRegistryRequest(request);
-		request.getProviderSystem().setSystemName("pilila");
+		//request.getProviderSystem().setSystemName("pilila");
 
 		final String validatedServiceDefinition = request.getServiceDefinition().toLowerCase().trim();
 		final String validatedProviderName = request.getProviderSystem().getSystemName().toLowerCase().trim();
@@ -673,7 +677,18 @@ public class ServiceRegistryDBService {
 			final int version = request.getVersion() == null ? Defaults.DEFAULT_VERSION : request.getVersion().intValue();
 			final ServiceRegistry srEntry = createServiceRegistry(serviceDefinition, provider, validatedServiceUri, endOfValidity, validatedSecurityType, metadataStr, version, request.getInterfaces());
 
-			return DTOConverter.convertServiceRegistryToServiceRegistryResponseDTO(srEntry);
+			ServiceRegistryResponseDTO response = DTOConverter.convertServiceRegistryToServiceRegistryResponseDTO(srEntry);
+
+			if(request.getProviderSystem().getSystemName().equalsIgnoreCase("eventhandler")) {
+				serviceRegistryApplicationInitListener.configureEventHandler();
+				logger.error("The created system is Event Handler");
+			}
+			else if (!request.getProviderSystem().getSystemName().equalsIgnoreCase("serviceregistry")) {
+				logger.error("Publishing event...");
+				serviceRegistryApplicationInitListener.publishMyEvent(request.getProviderSystem().getSystemName().toLowerCase().trim(), request.getProviderSystem().getAddress().toLowerCase().trim());
+			}
+
+			return response;
 		} catch (final DateTimeParseException ex) {
 			logger.debug(ex.getMessage(), ex);
 			throw new InvalidParameterException("End of validity is specified in the wrong format. Please provide UTC time using ISO-8601 format.", ex);
