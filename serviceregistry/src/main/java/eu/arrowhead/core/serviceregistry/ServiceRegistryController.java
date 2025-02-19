@@ -854,7 +854,7 @@ public class ServiceRegistryController {
 	public void sendPublishEventRequest(EventPublishRequestDTO eventPublishRequestDTO) {
     logger.debug("Sending publish event request to Event Handler...");
 
-    final String eventHandlerUri = "http://localhost:8455" + CommonConstants.EVENTHANDLER_URI + CommonConstants.OP_EVENTHANDLER_PUBLISH; // Ajusta la URI según sea necesario
+    final String eventHandlerUri = "https://127.0.0.1:8455" + CommonConstants.EVENTHANDLER_URI + CommonConstants.OP_EVENTHANDLER_PUBLISH; // Ajusta la URI según sea necesario
     final UriComponents uri = UriComponentsBuilder.fromHttpUrl(eventHandlerUri).build();
 
     try {
