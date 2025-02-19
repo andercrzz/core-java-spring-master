@@ -14,8 +14,10 @@
 
 package eu.arrowhead.core.serviceregistry;
 
+import java.security.PublicKey;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeParseException;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 
@@ -29,6 +31,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.logging.LogLevel;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -43,6 +46,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.util.UriComponents;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import eu.arrowhead.common.CommonConstants;
 import eu.arrowhead.common.CoreCommonConstants;
@@ -50,6 +55,7 @@ import eu.arrowhead.common.CoreDefaults;
 import eu.arrowhead.common.CoreUtilities;
 import eu.arrowhead.common.CoreUtilities.ValidatedPageParams;
 import eu.arrowhead.common.Defaults;
+import eu.arrowhead.common.SSLProperties;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.core.CoreSystem;
 import eu.arrowhead.common.core.CoreSystemService;
@@ -64,6 +70,7 @@ import eu.arrowhead.common.dto.internal.ServiceInterfacesListResponseDTO;
 import eu.arrowhead.common.dto.internal.ServiceRegistryGroupedResponseDTO;
 import eu.arrowhead.common.dto.internal.ServiceRegistryListResponseDTO;
 import eu.arrowhead.common.dto.internal.SystemListResponseDTO;
+import eu.arrowhead.common.dto.shared.EventPublishRequestDTO;
 import eu.arrowhead.common.dto.shared.ServiceDefinitionResponseDTO;
 import eu.arrowhead.common.dto.shared.ServiceInterfaceResponseDTO;
 import eu.arrowhead.common.dto.shared.ServiceQueryFormDTO;
@@ -75,8 +82,10 @@ import eu.arrowhead.common.dto.shared.ServiceRegistryResponseDTO;
 import eu.arrowhead.common.dto.shared.ServiceSecurityType;
 import eu.arrowhead.common.dto.shared.SystemRequestDTO;
 import eu.arrowhead.common.dto.shared.SystemResponseDTO;
+import eu.arrowhead.common.exception.ArrowheadException;
 import eu.arrowhead.common.exception.BadPayloadException;
 import eu.arrowhead.common.exception.InvalidParameterException;
+import eu.arrowhead.common.http.HttpService;
 import eu.arrowhead.common.processor.NetworkAddressDetector;
 import eu.arrowhead.common.processor.NetworkAddressPreProcessor;
 import eu.arrowhead.common.processor.model.AddressDetectionResult;
@@ -189,6 +198,9 @@ public class ServiceRegistryController {
 
 	@Autowired
 	private ServiceRegistryDBService serviceRegistryDBService;
+
+	@Autowired
+	protected SSLProperties sslProperties;
 	
 	@Autowired
 	private ServiceRegistryService serviceRegistryService;
@@ -212,7 +224,17 @@ public class ServiceRegistryController {
 	private NetworkAddressDetector networkAddressDetector;
 	
 	@Autowired
-    private ServiceRegistryApplicationInitListener serviceRegistryApplicationInitListener;
+	private ServiceRegistryApplicationInitListener serviceRegistryApplicationInitListener;
+
+	@Autowired
+	private HttpService httpService;
+
+	private PublicKey publicKey;
+
+	@Autowired
+	public void setPublicKey(PublicKey publicKey) {
+		this.publicKey = publicKey;
+	}
 
 	@Value(CoreCommonConstants.$USE_STRICT_SERVICE_DEFINITION_VERIFIER_WD)
 	private boolean useStrictServiceDefinitionVerifier;
@@ -805,11 +827,37 @@ public class ServiceRegistryController {
 				 !dto.getProviderSystem().getSystemName().equalsIgnoreCase("authorization") &&
 				 !dto.getProviderSystem().getSystemName().equalsIgnoreCase("orchestrator")) {
 			logger.error("Publishing event...");
-			serviceRegistryApplicationInitListener.publishMyEvent(dto.getProviderSystem().getSystemName().toLowerCase().trim(), dto.getProviderSystem().getAddress().toLowerCase().trim());
+			//-------------------------------------------------------------------------------------------------
+			final Map<String,String> metadata = null;
+			final String payload = dto.getProviderSystem().getSystemName() + "/" + dto.getProviderSystem().getAddress();
+			final String timeStamp = Utilities.convertZonedDateTimeToUTCString( ZonedDateTime.now() );
+
+			final String authInfo = sslProperties.isSslEnabled() ? Base64.getEncoder().encodeToString(publicKey.getEncoded()) : null;
+            final SystemRequestDTO source = new SystemRequestDTO(dto.getProviderSystem().getSystemName().toLowerCase().trim(), "127.0.0.1",
+			8443 , authInfo, null);
+
+			EventPublishRequestDTO eventPublishRequestDTO = new EventPublishRequestDTO("PUBLISHER_DESTROYED", source, metadata, payload, timeStamp);
+			sendPublishEventRequest(eventPublishRequestDTO);
+			//serviceRegistryApplicationInitListener.publishMyEvent(dto.getProviderSystem().getSystemName().toLowerCase().trim(), dto.getProviderSystem().getAddress().toLowerCase().trim());
 		}
 
 		return response;
 	}
+
+	public void sendPublishEventRequest(EventPublishRequestDTO eventPublishRequestDTO) {
+    logger.debug("Sending publish event request to Event Handler...");
+
+    final String eventHandlerUri = "http://localhost:8455" + CommonConstants.EVENTHANDLER_URI + CommonConstants.OP_EVENTHANDLER_PUBLISH; // Ajusta la URI según sea necesario
+    final UriComponents uri = UriComponentsBuilder.fromHttpUrl(eventHandlerUri).build();
+
+    try {
+        httpService.sendRequest(uri, HttpMethod.POST, Void.class, eventPublishRequestDTO);
+        logger.error("Publish event request sent successfully.");
+    } catch (final ArrowheadException ex) {
+        logger.error("Error sending publish event request: {}", ex.getMessage());
+        throw new ArrowheadException("Error sending publish event request: " + ex.getMessage(), ex);
+    }
+}
 
 	//-------------------------------------------------------------------------------------------------
 	@ApiOperation(value = SERVICEREGISTRY_REGISTER_DESCRIPTION, response = ServiceRegistryResponseDTO.class, tags = { CoreCommonConstants.SWAGGER_TAG_MGMT })
