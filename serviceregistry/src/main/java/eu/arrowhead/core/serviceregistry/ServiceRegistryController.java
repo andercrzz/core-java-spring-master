@@ -363,7 +363,26 @@ public class ServiceRegistryController {
 	@ResponseBody public SystemResponseDTO addSystem(@RequestBody final SystemRequestDTO request) {
 		logger.error("'{}' system is being creating.", request.getSystemName());
 		SystemResponseDTO response = callCreateSystem(null, request, CommonConstants.SERVICEREGISTRY_URI + SYSTEMS_URI);
+		if(request.getSystemName().equalsIgnoreCase("eventhandler")) {
+			logger.error("The created system is Event Handler");
+		}
+		else if (!request.getSystemName().equalsIgnoreCase("serviceregistry") &&
+				 !request.getSystemName().equalsIgnoreCase("authorization") &&
+				 !request.getSystemName().equalsIgnoreCase("orchestrator")) {
+			logger.error("Publishing event...");
+			//-------------------------------------------------------------------------------------------------
+			final Map<String,String> metadata = null;
+			final String payload = request.getSystemName() + "/" + request.getAddress();
+			final String timeStamp = Utilities.convertZonedDateTimeToUTCString( ZonedDateTime.now() );
 
+			final String authInfo = serviceRegistryApplicationInitListener.getAuthInfo();
+
+            final SystemRequestDTO source = new SystemRequestDTO(request.getSystemName().toLowerCase().trim(), "127.0.0.1",
+			8443 , authInfo, null);
+
+			EventPublishRequestDTO eventPublishRequestDTO = new EventPublishRequestDTO("PUBLISHER_DESTROYED", source, metadata, payload, timeStamp);
+			sendPublishEventRequest(eventPublishRequestDTO);
+		}
 		return response;
 	}
 	
