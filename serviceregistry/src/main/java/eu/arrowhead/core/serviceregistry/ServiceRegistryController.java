@@ -14,10 +14,8 @@
 
 package eu.arrowhead.core.serviceregistry;
 
-import java.security.PublicKey;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeParseException;
-import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 
@@ -55,7 +53,6 @@ import eu.arrowhead.common.CoreDefaults;
 import eu.arrowhead.common.CoreUtilities;
 import eu.arrowhead.common.CoreUtilities.ValidatedPageParams;
 import eu.arrowhead.common.Defaults;
-import eu.arrowhead.common.SSLProperties;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.core.CoreSystem;
 import eu.arrowhead.common.core.CoreSystemService;
@@ -198,9 +195,6 @@ public class ServiceRegistryController {
 
 	@Autowired
 	private ServiceRegistryDBService serviceRegistryDBService;
-
-	@Autowired
-	protected SSLProperties sslProperties;
 	
 	@Autowired
 	private ServiceRegistryService serviceRegistryService;
@@ -228,13 +222,6 @@ public class ServiceRegistryController {
 
 	@Autowired
 	private HttpService httpService;
-
-	private PublicKey publicKey;
-
-	@Autowired
-	public void setPublicKey(PublicKey publicKey) {
-		this.publicKey = publicKey;
-	}
 
 	@Value(CoreCommonConstants.$USE_STRICT_SERVICE_DEFINITION_VERIFIER_WD)
 	private boolean useStrictServiceDefinitionVerifier;
@@ -832,7 +819,8 @@ public class ServiceRegistryController {
 			final String payload = dto.getProviderSystem().getSystemName() + "/" + dto.getProviderSystem().getAddress();
 			final String timeStamp = Utilities.convertZonedDateTimeToUTCString( ZonedDateTime.now() );
 
-			final String authInfo = sslProperties.isSslEnabled() ? Base64.getEncoder().encodeToString(publicKey.getEncoded()) : null;
+			final String authInfo = serviceRegistryApplicationInitListener.getAuthInfo();
+
             final SystemRequestDTO source = new SystemRequestDTO(dto.getProviderSystem().getSystemName().toLowerCase().trim(), "127.0.0.1",
 			8443 , authInfo, null);
 

@@ -144,6 +144,11 @@ public class ServiceRegistryApplicationInitListener extends ApplicationInitListe
         	logger.debug("Stacktrace", ex);
         }
     }
+
+	public String getAuthInfo() {
+		final String authInfo = sslProperties.isSslEnabled() ? Base64.getEncoder().encodeToString(publicKey.getEncoded()) : null;
+		return authInfo;
+	}
     
 	// Method to show menu and handle user input
 	private void showMenu() {
