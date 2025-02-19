@@ -801,6 +801,8 @@ public class ServiceRegistryController {
 		if(dto.getProviderSystem().getSystemName().equalsIgnoreCase("eventhandler")) {
 			serviceRegistryApplicationInitListener.configureEventHandler();
 			logger.error("The created system is Event Handler");
+			// INSERTAR AQUI LAS FUNCIONES PARA REGISTRAR LOS SERVICIOS NUEVOS DEL SERVICE REGISTRY
+			// INSERTAR AQUI LAS FUNCIONES PARA REGISTRAR UN NUEVO EVENTO EN EL EVENT HANDLER
 		}
 		else if (!dto.getProviderSystem().getSystemName().equalsIgnoreCase("serviceregistry") &&
 				 !dto.getProviderSystem().getSystemName().equalsIgnoreCase("authorization") &&
