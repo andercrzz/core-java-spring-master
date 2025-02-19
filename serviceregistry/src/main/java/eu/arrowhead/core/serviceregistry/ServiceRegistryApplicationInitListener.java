@@ -296,9 +296,9 @@ public class ServiceRegistryApplicationInitListener extends ApplicationInitListe
 		
 		final EventPublishRequestDTO publishRequestDTO = new EventPublishRequestDTO(
 				eventType, 
-				source, 
-				metadata, 
-				payload, 
+				source,
+				metadata,
+				payload,
 				timeStamp);
 		
 		arrowheadService.publishToEventHandler(publishRequestDTO);

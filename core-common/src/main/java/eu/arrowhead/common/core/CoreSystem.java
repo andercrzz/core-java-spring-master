@@ -33,7 +33,9 @@ public enum CoreSystem {
 																	 CoreSystemService.SERVICEREGISTRY_UNREGISTER_SERVICE,
 																	 CoreSystemService.SERVICEREGISTRY_REGISTER_SYSTEM,
 																	 CoreSystemService.SERVICEREGISTRY_UNREGISTER_SYSTEM,
-																	 CoreSystemService.SERVICEREGISTRY_PULL_SYSTEMS)),
+																	 CoreSystemService.SERVICEREGISTRY_PULL_SYSTEMS,
+																	 CoreSystemService.SERVICEREGISTRY_CREATE_SYSTEM,
+																	 CoreSystemService.SERVICEREGISTRY_GET_SYSTEM)),
 
     SYSTEMREGISTRY(Defaults.DEFAULT_SYSTEMREGISTRY_PORT, List.of(CoreSystemService.SYSTEMREGISTRY_REGISTER_SERVICE,
     															   CoreSystemService.SYSTEMREGISTRY_UNREGISTER_SERVICE,
