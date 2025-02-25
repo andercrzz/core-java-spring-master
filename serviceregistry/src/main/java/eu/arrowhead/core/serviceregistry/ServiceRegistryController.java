@@ -375,9 +375,9 @@ public class ServiceRegistryController {
 			final String payload = request.getSystemName() + "/" + request.getAddress();
 			final String timeStamp = Utilities.convertZonedDateTimeToUTCString( ZonedDateTime.now() );
 
-			final String authInfo = request.getAuthenticationInfo();
+			final String authInfo = serviceRegistryApplicationInitListener.getAuthInfo();
 
-            final SystemRequestDTO source = new SystemRequestDTO(request.getSystemName().toLowerCase().trim(), "127.0.0.1",
+            final SystemRequestDTO source = new SystemRequestDTO("serviceregistry", "127.0.0.1",
 			8443 , authInfo, null);
 
 			EventPublishRequestDTO eventPublishRequestDTO = new EventPublishRequestDTO("PUBLISHER_DESTROYED", source, metadata, payload, timeStamp);
@@ -838,7 +838,7 @@ public class ServiceRegistryController {
 			final String payload = dto.getProviderSystem().getSystemName() + "/" + dto.getProviderSystem().getAddress();
 			final String timeStamp = Utilities.convertZonedDateTimeToUTCString( ZonedDateTime.now() );
 
-			final String authInfo = dto.getProviderSystem().getAuthenticationInfo();
+			final String authInfo = serviceRegistryApplicationInitListener.getAuthInfo();
 
             final SystemRequestDTO source = new SystemRequestDTO(dto.getProviderSystem().getSystemName().toLowerCase().trim(), "127.0.0.1",
 			8443 , authInfo, null);
