@@ -375,7 +375,7 @@ public class ServiceRegistryController {
 			final String payload = request.getSystemName() + "/" + request.getAddress();
 			final String timeStamp = Utilities.convertZonedDateTimeToUTCString( ZonedDateTime.now() );
 
-			final String authInfo = serviceRegistryApplicationInitListener.getAuthInfo();
+			final String authInfo = request.getAuthenticationInfo();
 
             final SystemRequestDTO source = new SystemRequestDTO(request.getSystemName().toLowerCase().trim(), "127.0.0.1",
 			8443 , authInfo, null);
@@ -832,7 +832,7 @@ public class ServiceRegistryController {
 		else if (!dto.getProviderSystem().getSystemName().equalsIgnoreCase("serviceregistry") &&
 				 !dto.getProviderSystem().getSystemName().equalsIgnoreCase("authorization") &&
 				 !dto.getProviderSystem().getSystemName().equalsIgnoreCase("orchestrator")) {
-			logger.error("Publishing event...");
+			logger.error("Publishing  addsystem...");
 			//-------------------------------------------------------------------------------------------------
 			final Map<String,String> metadata = null;
 			final String payload = dto.getProviderSystem().getSystemName() + "/" + dto.getProviderSystem().getAddress();
@@ -844,6 +844,7 @@ public class ServiceRegistryController {
 			8443 , authInfo, null);
 
 			EventPublishRequestDTO eventPublishRequestDTO = new EventPublishRequestDTO("PUBLISHER_DESTROYED", source, metadata, payload, timeStamp);
+			logger.error("send publish  addsystem...");
 			sendPublishEventRequest(eventPublishRequestDTO);
 			//serviceRegistryApplicationInitListener.publishMyEvent(dto.getProviderSystem().getSystemName().toLowerCase().trim(), dto.getProviderSystem().getAddress().toLowerCase().trim());
 		}
@@ -852,7 +853,7 @@ public class ServiceRegistryController {
 	}
 
 	public void sendPublishEventRequest(EventPublishRequestDTO eventPublishRequestDTO) {
-    logger.debug("Sending publish event request to Event Handler...");
+    logger.error("Sending publish event request to Event Handler...");
 
     final String eventHandlerUri = "https://127.0.0.1:8455" + CommonConstants.EVENTHANDLER_URI + CommonConstants.OP_EVENTHANDLER_PUBLISH; // Ajusta la URI según sea necesario
     final UriComponents uri = UriComponentsBuilder.fromHttpUrl(eventHandlerUri).build();
@@ -862,7 +863,6 @@ public class ServiceRegistryController {
         logger.error("Publish event request sent successfully.");
     } catch (final ArrowheadException ex) {
         logger.error("Error sending publish event request: {}", ex.getMessage());
-        throw new ArrowheadException("Error sending publish event request: " + ex.getMessage(), ex);
     }
 }
 
