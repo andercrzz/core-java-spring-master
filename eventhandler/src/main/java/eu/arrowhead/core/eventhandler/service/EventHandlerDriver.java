@@ -103,8 +103,9 @@ public class EventHandlerDriver {
 		final EventPublishStartDTO eventPublishStartDTO = new EventPublishStartDTO(request, involvedSubscriptions);
 		try {
 			publishingQueue.put(eventPublishStartDTO);
+			logger.error("publishEvent finished correctly.");
 		} catch (final Exception ex) {
-			logger.debug("publishEvent finished with exception : " + ex);
+			logger.error("publishEvent finished with exception : " + ex);
 		}
 	}
 	

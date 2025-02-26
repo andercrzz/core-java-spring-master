@@ -62,9 +62,11 @@ public class PublishEventTask implements Runnable {
 			
 			validateMembers();
 			final UriComponents subscriptionUri = getSubscriptionUri(subscription);
+
+			logger.error("Sending event to: {}", subscriptionUri.toUriString());
 			httpService.sendRequest(subscriptionUri, HttpMethod.POST, Void.class, DTOConverter.convertEventPublishRequestDTOToEventDTO(publishRequestDTO));			
 		} catch (final Throwable ex) {			
-			logger.debug("Exception:", ex.getMessage());			
+			logger.error("PUTA MIERDA:", ex.getMessage());			
 		}
 	}
 	
