@@ -832,21 +832,20 @@ public class ServiceRegistryController {
 		else if (!dto.getProviderSystem().getSystemName().equalsIgnoreCase("serviceregistry") &&
 				 !dto.getProviderSystem().getSystemName().equalsIgnoreCase("authorization") &&
 				 !dto.getProviderSystem().getSystemName().equalsIgnoreCase("orchestrator")) {
-			logger.error("Publishing  addsystem...");
+
+			logger.error("Publishing event...");
 			//-------------------------------------------------------------------------------------------------
 			final Map<String,String> metadata = null;
-			final String payload = dto.getProviderSystem().getSystemName() + "/" + dto.getProviderSystem().getAddress();
+			final String payload = dto.getProviderSystem().getSystemName() + "/" + dto.getProviderSystem().getAddress() + "/" + dto.getServiceDefinition();
 			final String timeStamp = Utilities.convertZonedDateTimeToUTCString( ZonedDateTime.now() );
 
 			final String authInfo = serviceRegistryApplicationInitListener.getAuthInfo();
 
-            final SystemRequestDTO source = new SystemRequestDTO(dto.getProviderSystem().getSystemName().toLowerCase().trim(), "127.0.0.1",
+            final SystemRequestDTO source = new SystemRequestDTO("serviceregistry", "127.0.0.1",
 			8443 , authInfo, null);
 
 			EventPublishRequestDTO eventPublishRequestDTO = new EventPublishRequestDTO("PUBLISHER_DESTROYED", source, metadata, payload, timeStamp);
-			logger.error("send publish  addsystem...");
 			sendPublishEventRequest(eventPublishRequestDTO);
-			//serviceRegistryApplicationInitListener.publishMyEvent(dto.getProviderSystem().getSystemName().toLowerCase().trim(), dto.getProviderSystem().getAddress().toLowerCase().trim());
 		}
 
 		return response;
